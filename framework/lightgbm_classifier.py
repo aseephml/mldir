@@ -4,21 +4,10 @@ import shutil
 import numpy as np
 import pandas as pd
 
-from data import DataLoader
-from data.preprocessors import GenericDataPreprocessor, ToNumpy
-from model import ModelLoader, GenericModel
-
-parser = argparse.ArgumentParser(description=None)
-parser.add_argument('--data', required=True,
-    help='Path where to read train.csv and test.csv files')
-parser.add_argument('--models', required=True,
-    help='Path where to save source code')
-parser.add_argument('--preds', required=True,
-    help='Path where to save model outputs')
-parser.add_argument('--nosave', dest='save', action='store_false')
-parser.set_defaults(save=True)
-args = parser.parse_args()
-
+from data_loader import DataLoader
+from data_preprocessor import GenericDataPreprocessor, ToNumpy
+from generic_model import GenericModel
+from model_loader2 import ModelLoader 
 
 ## >> Read and preprocess data
 from sklearn.preprocessing import StandardScaler, RobustScaler
@@ -36,14 +25,13 @@ class DropColumns(GenericDataPreprocessor):
     def transform(self, X):
         return X.drop(['ID_code'], axis=1)
 
-dl_params = {
-    'target': "target",
-    'id': "ID_code"
-}
-data_loader = DataLoader(args.data, **dl_params)
-data_loader.preprocess(DropColumns, ToNumpy)
-data_loader.generate_split(StratifiedKFold,
-    n_splits=5, shuffle=True, random_state=42)
+#dl_params = {
+#    'target': "target",
+#    'id': "ID_code"
+#}
+#data_loader = DataLoader(args.data, **dl_params)
+#data_loader.preprocess(DropColumns, ToNumpy)
+#data_loader.generate_split(StratifiedKFold,    n_splits=5, shuffle=True, random_state=42)
 ## << Read and preprocess data
 
 ## >> Create and train model
@@ -59,7 +47,7 @@ model_params = {
 class LightGbmTrainer(GenericModel):
     def __init__(self):
         self.lgb_params = {
-            "device": "gpu",
+            # "device": "gpu", #no GPU kernel
             "max_bin" : 63,
             "gpu_use_dp" : False,
             "objective" : "binary",
@@ -88,20 +76,13 @@ class LightGbmTrainer(GenericModel):
         evals_result = {}
         self.model = lgb.train(self.lgb_params,
                         trn_data,
-                        100000,
+                        100,
                         valid_sets = [trn_data, val_data],
-                        early_stopping_rounds=3000,
+                        early_stopping_rounds=30,
                         verbose_eval = 1000,
                         evals_result=evals_result)
 
     def predict(self, test):
         return self.model.predict(test)
 
-
-model = ModelLoader(LightGbmTrainer, model_params)
-results = model.run(data_loader, roc_auc_score, {}, {}, verbose=True)
-
-if args.save:
-    current_file_path = os.path.abspath(__file__) # to save this .py file
-    model.save(data_loader, results, current_file_path, args.preds, args.models)
 ## << Create and train model
