@@ -22,4 +22,4 @@ class ToNumpy(GenericDataPreprocessor):
         return X.values
 
     def transform(self, X):
-return X.values
+        return X.values
