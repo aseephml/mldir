@@ -5,7 +5,7 @@ import pandas as pd
 import datetime
 import shutil
 
-from .generic_model import GenericModel
+from generic_model import GenericModel
 
 
 class ModelLoader:
@@ -147,5 +147,4 @@ class ModelLoader:
         test_submit = pd.DataFrame(test_data,
             columns=[id_col_name, target_col_name])
 
-        self._save_files(train_submit, test_submit, accuracy,
-caller_path, preds_path, models_path)
+        self._save_files(train_submit, test_submit, accuracy,caller_path, preds_path, models_path)
