@@ -1,3 +1,4 @@
+import pandas as pd # data processing
 class ObjectOrientedTitanic():
 
     def __init__(self, train, test):
